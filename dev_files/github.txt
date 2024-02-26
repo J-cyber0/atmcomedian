@@ -1,0 +1,36 @@
+1 Create a GitHub Account:
+     • Visit GitHub and sign up for an account if you don't already have one.
+  2 Install Git:
+     • On Ubuntu, open a terminal and run sudo apt-get install git.
+  3 Configure Git:
+     • Set your user name: git config --global user.name "Your Name"
+     • Set your email address: git config --global user.email "youremail@example.com"
+  4 Create a New Repository on GitHub:
+     • Log in to your GitHub account.
+     • Click the "+" icon in the top-right corner and select "New repository".
+     • Name your repository, add a description (optional), and choose whether it will be public or private.
+     • Click "Create repository".
+  5 Create a Local Repository:
+     • Navigate to your project directory in the terminal: cd /path/to/your/project
+     • Initialize a local Git repository: git init
+  6 Add Your Project to the Repository:
+     • Add the files to your repository: git add . (The dot means add all files in the directory.)
+     • Commit the files to your repository: git commit -m "Initial commit"
+  7 Link Your Local Repository to GitHub:
+     • Copy the remote repository URL from GitHub.
+     • Link your local repository to GitHub: git remote add origin <repository-URL>
+  8 Push Your Code to GitHub:
+     • Push your code: git push -u origin master (For the first push, -u sets the upstream reference. For subsequent pushes, you can just use git
+       push.)
+  9 Pull Changes from GitHub:
+     • To update your local repository with changes from GitHub: git pull origin master
+ 10 Branching:
+     • Create a new branch: git branch <branch-name>
+     • Switch to your new branch: git checkout <branch-name>
+     • Merge changes from your branch to master: First, switch to the master branch with git checkout master, then git merge <branch-name>
+ 11 Handling Merge Conflicts:
+     • If there are conflicts, Git will alert you. Open the conflicting files and resolve the conflicts manually.
+     • After resolving, add the resolved files (git add .), and then commit (git commit -m "Resolved conflicts").
+ 12 Using GitHub for Collaboration:
+     • To collaborate, share your repository with others by adding them as collaborators in the repository settings on GitHub.
+     • Collaborators can clone the repository, make changes, and push them back to GitHub as described above.

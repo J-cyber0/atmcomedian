@@ -33,11 +33,7 @@ this outline. This file will serve as a guide for developers working on this mod
  - Implement comprehensive error handling across all functions to manage exceptions related to network issues, insufficient funds, or transaction    
  failures. Use try-except blocks to catch and log errors appropriately.                                                                              
                                                                                                                                                      
- ## Testing                                                                                                                                          
- - Write unit tests for each function to ensure they perform as expected under various conditions. Include tests for successful operations, expected 
- failures, and edge cases.                                                                                                                           
-                                                                                                                                                     
- ## Security Considerations                                                                                                                          
+  ## Security Considerations                                                                                                                          
  - Ensure all interactions with the blockchain are conducted over secure connections.                                                                
  - Manage private keys and sensitive information with utmost security, avoiding hard-coded values in the codebase.                                   
                                                                                                                                                      

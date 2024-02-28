@@ -1,56 +1,98 @@
-Run the Setup Script
+Installation and Setup
 
-Execute the setup.py script to create a virtual environment and install dependencies:
+### Prerequisites
 
+* Python 3.9 or higher
+* Pip
+* Git
 
- python setup.py
+### Installation
 
+### Optional (Recommended)
 
-                                                                   Important Notes
-
- • Virtual Environment Activation: The setup script will create a virtual environment, but due to shell limitations, it may not activate it. After
-   running the setup script, activate the virtual environment with:
-
-    source venv/bin/activate  # On Unix-like systems
-    .\venv\Scripts\activate   # On Windows
-
- • Windows Compatibility: The setup script uses Unix-like paths for some operations. Adjustments might be necessary for Windows environments,
-   particularly for activating the virtual environment within the script.
- • Execution Permission: If you're on a Unix-like system, ensure the setup.py script is executable by running:
-
-    chmod +x setup.py
-
- • sgpt Verification: The script attempts to verify the sgpt installation. Ensure sgpt is correctly installed and accessible at
-   /home/juan/.local/bin/sgpt or adjust the path in the script accordingly.
-
-
-                                                                        Usage
-
-After setting up, you can start using the application by running:
-
-
- python main.py
-
-
-Modify the settings.json file in the settings/ directory to configure wallet and other application settings as needed.
-
-
-                                                                    Contributing
-
-Contributions are welcome! If you have any suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
-
-
-                                                                       License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-
-                                                                  Acknowledgements
-
- • Web3.py: Python library for interacting with the Ethereum blockchain.
- • Requests: Python library for making HTTP requests.
+* Python setup.py command for automated setup
 
 
 
- This revised `README.md` provides a comprehensive guide for users to set up and start using the **atmcomedian** application, including important
- notes on virtual environment activation, Windows compatibility, execution permission, and `sgpt` verification.
+### Step-by-Step Guide
+
+#### 1. Clone or Download the Repository
+
+```
+git clone https://github.com/J-cyber0/atmcomedian.git
+```
+
+#### 2. Setup Using setup.py
+
+(Optional but recommended) Run the following command to install the required dependencies and perform additional setup tasks:
+
+```
+python setup.py install
+```
+
+#### 3. Create a Virtual Environment (if not using setup.py)
+
+A virtual environment helps isolate the application's dependencies from the system's global Python environment.
+
+**Windows:**
+
+```
+python -m venv venv
+```
+
+**macOS/Linux:**
+
+```
+python3 -m venv venv
+```
+
+#### 4. Install Required Dependencies (if not using setup.py)
+
+Activate the virtual environment to install the dependencies:
+
+**Windows:**
+
+```
+venv\Scripts\activate
+```
+
+**macOS/Linux:**
+
+```
+source venv/bin/activate
+```
+
+Then, install the dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+## Create Database - Do this no matter which method you installed with
+
+**PostgreSQL:**
+
+1. Create a database named `crtypos` with the following details:
+   * Host: localhost
+   * Port: 8081
+   * User: atmcomedian
+   * Password: password
+2. Run the following command to create the database:
+
+```
+createdb -h localhost -U atmcomedian -p 8081 -e cryptos
+```
+
+#### After Run the Application - Do this no matter which method you installed with
+
+```
+python main.py
+```
+
+### Additional Notes
+
+* Optional: Install the python framework sgpt by tbckr on github to get an AI in your command line. Refer to the following github repository for more info:
+
+ ```
+ https://github.com/tbckr/sgpt
+ ```"

@@ -22,15 +22,8 @@ Installation and Setup
 git clone https://github.com/J-cyber0/atmcomedian.git
 ```
 
-#### 2. Setup Using setup.py
 
-(Optional but recommended) Run the following command to install the required dependencies and perform additional setup tasks:
-
-```
-python setup.py install
-```
-
-#### 3. Create a Virtual Environment (if not using setup.py)
+#### 2. Create a Virtual Environment (if not using setup.py)
 
 A virtual environment helps isolate the application's dependencies from the system's global Python environment.
 
@@ -46,7 +39,7 @@ python -m venv venv
 python3 -m venv venv
 ```
 
-#### 4. Install Required Dependencies (if not using setup.py)
+#### 3. Install Required Dependencies (if not using setup.py)
 
 Activate the virtual environment to install the dependencies:
 
@@ -83,7 +76,7 @@ pip install -r requirements.txt
 createdb -h localhost -U atmcomedian -p 8081 -e cryptos
 ```
 
-#### After Run the Application - Do this no matter which method you installed with
+### After Run the Application - Do this no matter which method you installed with
 
 ```
 python main.py

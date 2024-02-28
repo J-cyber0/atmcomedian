@@ -1,1 +1,8 @@
-python-dotenv
+typing
+click
+psycopg2
+dotenv
+web3
+pycrypto
+pytest
+unittest

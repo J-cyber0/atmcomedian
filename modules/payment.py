@@ -1,7 +1,6 @@
 import os
 from web3 import Web3
 import psycopg2
-import dotenv
 from database import Database
 
 db = Database()

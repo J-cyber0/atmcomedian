@@ -1,71 +1,36 @@
-import os
-import dotenv
-from agents.monitor_wallet import read_settings, send
-from modules.cli import wallet_setup as cli_wallet_setup
-from modules.database import Database
+import asyncio
+import modules.database as db
+import modules.cli as cli
+from modules.deposit import Deposit
 
-db = Database()
+class Main:
+    def __init__(self):
+        self.user_logged_in = False
 
-def wallet_setup():
-    return cli_wallet_setup()
+    async def main(self):
+        await self.check_user_login()
 
-def main():
-    # Call the function to store the database data in the .env file
-    store_db_data()
-    # Proceed with wallet setup
-    new_wallet = main_wallet_setup()
-    if new_wallet:
-        print("Wallet setup successful.")
-    else:
-        print("Wallet setup failed.")
+    async def check_user_login(self):
+        if not self.user_logged_in:
+            if not await cli.is_user_logged_in():
+                await cli.user_login()
+            self.user_logged_in = True
+        royalty_wallets = await self.get_royalty_wallets()
+        await self.start_monitor(royalty_wallets)
 
-def store_db_data():
-    print("Please enter the database configuration:")
-    postgres_host = input("Postgres host: ")
-    postgres_port = input("Postgres port: ")
-    postgres_database = input("Postgres database: ")
-    postgres_user = input("Postgres username: ")
-    postgres_pass = input("Enter your Postgres password: ")
+    async def get_royalty_wallets(self):
+        return await cli.get_wallets(self, current_collection='eth')
 
-    # Create the database configuration string
-    db_config_str = f"POSTGRES_HOST={postgres_host}\n" \
-                    f"POSTGRES_PORT={postgres_port}\n" \
-                    f"POSTGRES_DATABASE={postgres_database}\n" \
-                    f"POSTGRES_USER={postgres_user}\n" \
-                    f"POSTGRES_PASSWORD={postgres_pass}\n"
+    async def start_monitor(self, royalty_wallets):
+        cli.log_transactions()
+        deposit_instance = Deposit()
 
-    # Path to the .env file
-    env_file_path = "./.env"
+        # Get latest wallet
+        latest_wallet = royalty_wallets[0]  # Get the first wallet in the list
 
-    # Write the database configuration to the .env file
-    with open(env_file_path, "w") as env_file:
-        env_file.write(db_config_str)
-
-    print("Database configuration saved to .env file")
-
-    # Load the environment variables from the .env file
-    dotenv.load_dotenv()
-
-def main_wallet_setup():
-    private_key = input("Enter your private key: ")
-    wallet_address = input("Enter the address to withdraw funds from: ")
-    infura_url = input("Enter your Infura URL: ")
-
-    # Create a new wallet with the provided information
-    wallet = {
-        "wallet_name": "eth",
-        "private_key": private_key,
-        "wallet_address": wallet_address,
-        "infura_url": infura_url
-    }
-
-    # Start the wallet monitor agent with the new wallet
-    store_wallet(wallet)
-    return wallet
-
-def store_wallet(wallet):
-    db.insert_wallet_data(wallet)
-    print("Storing wallet info...")
+        # Call listen_deposit_events for the latest wallet only
+        await deposit_instance.listen_deposits(wallet_address=latest_wallet)
 
 if __name__ == "__main__":
-    main()
+    main_instance = Main()
+    asyncio.run(main_instance.main())

@@ -1,7 +1,12 @@
+asyncio
+requests
+websockets
+pymongo
 typing
 click
 psycopg2
 dotenv
+hashlib
 web3
 pycrypto
 pytest

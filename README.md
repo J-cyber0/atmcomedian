@@ -65,7 +65,7 @@ pip install -r requirements.txt
 
 **PostgreSQL:**
 
-1. Create a database named `crtypos` with the following details:
+1. Create a database named `cryptos` with the following details:
    * Host: localhost
    * Port: 8081
    * User: atmcomedian

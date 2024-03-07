@@ -1,7 +1,7 @@
 import os
 from web3 import Web3
 import psycopg2
-from database import Database
+from modules.database import Database
 
 db = Database()
 
@@ -14,8 +14,12 @@ class Payment:
     def connect_to_blockchain(self):
         return Web3(Web3.HTTPProvider("http://localhost:8545"))
 
+    
+    def generate_transaction(self, recipient_address, amount):
+        return self.create_transaction(recipient_address, amount)
+
     def create_transaction(self, recipient_address, amount):
-        connected_to_blockchain = self.web3.isConnected()
+        connected_to_blockchain = self.web3.is_connected()
         if connected_to_blockchain:
             transaction = {
                 'to': recipient_address,
@@ -26,16 +30,6 @@ class Payment:
             return transaction
         else:
             return None
-
-    def monitor_transaction_status(self, transaction_hash):
-        transaction_receipt = self.web3.eth.get_transaction_receipt(transaction_hash)
-        if transaction_receipt:
-            return 'Confirmed' if transaction_receipt['status'] == 1 else 'Failed'
-        else:
-            return 'Pending'
-
-    def generate_transaction(self, recipient_address, amount):
-        return self.create_transaction(recipient_address, amount)
 
     def sign_transaction(self, transaction, private_key):
         signed_transaction = self.web3.eth.account.sign_transaction(transaction, private_key)
@@ -61,8 +55,15 @@ class Payment:
         except psycopg2.Error as e:
             print("Error storing transaction details in PostgreSQL:", e)
 
+    def monitor_transaction_status(self, transaction_hash):
+        transaction_receipt = self.web3.eth.get_transaction_receipt(transaction_hash)
+        if transaction_receipt:
+            return 'Confirmed' if transaction_receipt['status'] == 1 else 'Failed'
+        else:
+            return 'Pending'
+
     def initiate_transaction(self, recipient_address, amount, private_key):
-        transaction = self.create_transaction(recipient_address, amount)
+        transaction = self.generate_transaction(recipient_address, amount)
         if transaction:
             signed_transaction = self.sign_transaction(transaction, private_key)
             transaction_hash = self.submit_transaction(signed_transaction)
@@ -74,5 +75,7 @@ class Payment:
         else:
             print('Failed to create transaction. Blockchain might not be reachable.')
 
+
 if __name__ == '__main__':
-    Payment().initiate_transaction('0x627306090abaB3A6e1400e9')
+    #Payment().initiate_transaction(recipient_address=, amount=input('Enter amount to send: '), private_key=os.getenv('PRIVATE_KEY'))
+    Payment()

@@ -67,6 +67,7 @@ class Database:
                     wallet_name VARCHAR(255) NOT NULL,
                     private_key VARCHAR(255) NOT NULL,
                     wallet_address VARCHAR(255) NOT NULL,
+                    nft_collection VARCHAR(255) NOT NULL,
                     infura_url VARCHAR(255) NOT NULL,
                     balance NUMERIC NOT NULL,
                     currency VARCHAR(255) NOT NULL,
@@ -75,11 +76,126 @@ class Database:
                 """
             )
 
+            # Create NFTs table
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS nfts (
+                id SERIAL PRIMARY KEY,
+                collection_name VARCHAR(255) NOT NULL,
+                collection_description VARCHAR(255) NOT NULL
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+            )
+
+            # Create Royalty Wallets table
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS royalty_wallets (
+                id SERIAL PRIMARY KEY,
+                wallet_name VARCHAR(255) NOT NULL,
+                wallet_address VARCHAR(255) NOT NULL,
+                nft_collection VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+            """
+            )
+
             self.postgres_connection.commit()
             cursor.close()
             print("PostgreSQL tables created successfully.")
         except psycopg2.Error as e:
             print(f"Error creating PostgreSQL tables: {e}")
+
+    def store_user_credentials(self, username, password):
+        try:
+            # PostgreSQL
+            cursor = self.postgres_connection.cursor()
+            cursor.execute(
+                """
+                INSERT INTO users (username, password)
+                VALUES (%s, %s)
+                """,
+                (username, password)
+            )
+            self.postgres_connection.commit()
+            cursor.close()
+            print("User credentials inserted successfully.")
+            return True
+        except Exception as e:
+            print(f"Error inserting data: {e}")
+            return False
+
+    def store_nft_collection_info(self, collection_name, collection_description):
+        try:
+            # PostgreSQL
+            cursor = self.postgres_connection.cursor()
+            cursor.execute(
+                """
+                INSERT INTO nfts (collection_name, collection_description)
+                VALUES (%s, %s)
+                """,
+                (collection_name, collection_description)
+            )
+            self.postgres_connection.commit()
+            cursor.close()
+            print("NFT collection info stored successfully.")
+            return True
+        except Exception as e:
+            print(f"Error inserting data: {e}")
+            return False
+        
+    def store_royalty_wallets(self, current_collection, wallet):
+        try:
+            # PostgreSQL
+            cursor = self.postgres_connection.cursor()
+            cursor.execute(
+                """
+                INSERT INTO royalty_wallets (wallet_name, nft_collection, wallet_address)
+                VALUES (%s, %s, %s)
+                """,
+                ('eth', current_collection, wallet)
+            )
+            self.postgres_connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(f"Error inserting data: {e}")
+            return False
+
+
+    def query_nft_collection_info(self, nft_collection_name):
+        try:
+            # PostgreSQL
+            cursor = self.postgres_connection.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM nfts WHERE collection_name = %s
+                """,
+                (nft_collection_name)
+            )
+            nfts = cursor.fetchall()
+            cursor.close()
+            return nfts
+        except Exception as e:
+            print(f"Error querying data: {e}")
+            return False
+        
+    def query_royalty_wallets(self):
+        try:
+            # PostgreSQL
+            cursor = self.postgres_connection.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM royalty_wallets
+                """
+            )
+            wallets = cursor.fetchall()
+            cursor.close()
+            return wallets
+        except Exception as e:
+            print(f"Error querying data: {e}")
+            return False
 
     def insert_wallet_data(self, wallet):
         try:
@@ -101,26 +217,27 @@ class Database:
             print("Wallet inserted successfully.")
         except Exception as e:
             print(f"Error inserting data: {e}")
-        
 
-    def query_wallet_data(self):
+
+    async def query_wallet_info(self, nft_collection_name):
         try:
             # PostgreSQL
             cursor = self.postgres_connection.cursor()
 
             cursor.execute(
                 """
-                SELECT * FROM wallets WHERE wallet_name = 'eth'
-                """
+                SELECT * FROM wallets WHERE nft_collection = %s
+                """,
+                (nft_collection_name,)
             )
 
-            wallet = cursor.fetchone()
-            print(f"PostgreSQL wallet: {wallet}")
-
+            wallets = cursor.fetchall()
             cursor.close()
-
+            return wallets
         except Exception as e:
             print(f"Error querying data: {e}")
+
+
 
     def insert_transaction(self, transaction):
         try:
@@ -158,6 +275,7 @@ class Database:
         except Exception as e:
             print(f"Error querying data: {e}")
             return None
+   
 
     def close_connections(self):
         try:

@@ -9,15 +9,8 @@ from modules.payment import Payment
 class Deposit:
     def __init__(self):
         self.web3 = Web3(Web3.WebsocketProvider("ws://localhost:8546", websocket_timeout=60))
-        self.contract_abi = self.load_contract_abi()
-        self.contract_address = os.getenv('CONTRACT_ADDRESS')
-        self.contract = self.web3.eth.contract(address=self.contract_address, abi=self.contract_abi)
         self.db = Database()
         self.pause_event = threading.Event()
-
-    def load_contract_abi(self):
-        with open(os.path.join(os.getcwd(), 'contracts', 'Coin.abi'), 'r') as contract_file:
-            return json.load(contract_file)
 
     async def listen_deposits(self, receiver_wallet_address):
         while True:
@@ -45,7 +38,7 @@ class Deposit:
 
     async def trigger_payments(self):
         try:
-            print("triggering payments...")
+            print("Triggering payments...")
             royalty_wallets = await self.get_royalty_wallets()
             if not royalty_wallets:
                 print("Error processing payments: No royalty wallets found.")

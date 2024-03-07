@@ -1,40 +1,65 @@
-Installation and Setup
+### Installation and Setup
 
-### Prerequisites
+#### Prerequisites
 
 * Python 3.9 or higher
 * Pip
 * Git
+* PostgreSQL
 
-### Installation
+#### Installation
 
-### Optional (Recommended)
+Before proceeding, make sure to have PostgreSQL installed on your system. If not, follow these steps:
+
+**Download PostgreSQL:**
+
+- **Windows:**
+  - Download the PostgreSQL installer for Windows [https://www.postgresql.org/download/windows/]
+  - This installer can run in graphical or silent install modes.
+
+- **macOS:**
+  - Download the PostgreSQL installer for macOS [https://www.postgresql.org/download/macosx/]
+  - This installer can run in graphical or silent install modes.
+ 
+- **Linux:**
+  - PostgreSQL is available in all Ubuntu versions by default. 
+  - To upgrade PostgreSQL on Ubuntu, use the apt command:
+```
+sudo apt update
+sudo apt upgrade postgresql
+```
+
+   - After the upgrade, restart PostgreSQL:
+```
+sudo systemctl restart postgresql
+```
+
+  - For other distributions, refer to your package manager or visit [https://www.postgresql.org/download/]
+
+Once installed, proceed with the setup.
+
+
+#### Optional (Recommended)
 
 * Python setup.py command for automated setup
-
-
 
 ### Step-by-Step Guide
 
 #### 1. Clone or Download the Repository
-
 ```
 git clone https://github.com/J-cyber0/atmcomedian.git
 ```
-
 
 #### 2. Create a Virtual Environment (if not using setup.py)
 
 A virtual environment helps isolate the application's dependencies from the system's global Python environment.
 
 **Windows:**
-
 ```
 python -m venv venv
 ```
 
 **macOS/Linux:**
-
 ```
 python3 -m venv venv
 ```
@@ -44,20 +69,16 @@ python3 -m venv venv
 Activate the virtual environment to install the dependencies:
 
 **Windows:**
-
 ```
 venv\Scripts\activate
 ```
 
 **macOS/Linux:**
-
 ```
 source venv/bin/activate
-
 ```
 
-#### 4. Change current directory
-
+Change current directory to `atmcomedian`:
 ```
 cd atmcomedian
 ```
@@ -72,27 +93,24 @@ pip install -r requirements.txt
 
 **PostgreSQL:**
 
-1. Create a database named `cryptos` with the following details:
+1. Ensure PostgreSQL server is running.
+2. Connect to PostgreSQL and create a database named `cryptos` with the following details:
    * Host: localhost
-   * Port: 8081
-   * User: atmcomedian
+   * Port: 5432
+   * User: postgres
    * Password: password
-2. Run the following command to create the database:
-
+3. Run the following command to create the database:
 ```
-createdb -h localhost -U atmcomedian -p 8081 -e cryptos
+createdb -h localhost -U atmcomedian -p 5432 cryptos
 ```
 
 ### After Run the Application - Do this no matter which method you installed with
-
 ```
 python main.py
 ```
 
 ### Additional Notes
 
-* Optional: Install the python framework sgpt by tbckr on github to get an AI in your command line. Refer to the following github repository for more info:
+* Optional: Install the python framework sgpt by tbckr on GitHub to get an AI in your command line. Refer to the following GitHub repository for more info:
 
- ```
- https://github.com/tbckr/sgpt
- ```
+https://github.com/tbckr/sgpt

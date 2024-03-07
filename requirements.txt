@@ -3,11 +3,13 @@ asyncio          # For asynchronous programming
 typing           # For type hinting
 
 # Web-related libraries
+python-dotenv    # For loading environment variables
 requests         # For making HTTP requests
 websockets       # For WebSocket communication
-click            # For creating command-line interfaces
+click>=8.1.7        # For creating command-line interfaces
 
 # Database-related libraries
+asyncpg          # For PostgreSQL interaction
 pymongo          # For MongoDB interaction
 psycopg2         # For PostgreSQL interaction
 

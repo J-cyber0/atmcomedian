@@ -53,6 +53,13 @@ venv\Scripts\activate
 
 ```
 source venv/bin/activate
+
+```
+
+#### 4. Change current directory
+
+```
+cd atmcomedian
 ```
 
 Then, install the dependencies:

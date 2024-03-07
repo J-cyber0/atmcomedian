@@ -12,7 +12,6 @@ pymongo          # For MongoDB interaction
 psycopg2         # For PostgreSQL interaction
 
 # Security-related libraries
-hashlib          # For hashing algorithms
 pycrypto         # For cryptographic functions
 web3             # For interacting with Ethereum blockchain
 

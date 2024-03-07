@@ -56,7 +56,7 @@ A virtual environment helps isolate the application's dependencies from the syst
 
 **Windows/macOS/Linux:**
 ```
-python3.10 -m venv venv
+python3 -m venv venv
 ```
 
 #### 3. Install Required Dependencies (if not using setup.py)

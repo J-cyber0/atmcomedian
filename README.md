@@ -38,6 +38,23 @@ sudo apt upgrade postgresql
 sudo systemctl restart postgresql
 ```
 
+- **WSL2 Ubuntu:**
+```
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+ 
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+ 
+sudo apt-get update
+
+sudo apt-get -y install postgresql postgresql-contrib
+ 
+psql --version
+ 
+sudo service postgresql status
+ 
+sudo service postgresql start
+```
+
   - For other distributions, refer to your package manager or visit [https://www.postgresql.org/download/]
 
 Once installed, proceed with the setup.

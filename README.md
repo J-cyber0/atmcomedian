@@ -92,14 +92,6 @@ sudo systemctl restart postgresql
   - To install PostgreSQL on WSL2 Ubuntu, use the following commands:
 ```
 sudo apt-get update
-```
-
-   - To install PostgreSQL on WSL2 Ubuntu, use the following commands:
-```
-sudo apt install postgresql postgresql-contrib
-```
-
-sudo apt-get update
 
 sudo apt-get -y install postgresql postgresql-contrib
 ```

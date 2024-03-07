@@ -24,9 +24,9 @@ Before proceeding, make sure to have PostgreSQL installed on your system. If not
 - **Linux:**
   - To install PostgreSQL on Ubuntu, use the apt-get (or other apt-driving) command:
 ```
-apt-get install postgresql-12
+sudo apt install postgresql-client-common
 ```
- 
+
   - To upgrade PostgreSQL on Ubuntu, use the apt command:
 ```
 sudo apt update

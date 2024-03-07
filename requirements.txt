@@ -1,13 +1,21 @@
-asyncio
-requests
-websockets
-pymongo
-typing
-click
-psycopg2
-dotenv
-hashlib
-web3
-pycrypto
-pytest
-unittest
+# Core libraries
+asyncio          # For asynchronous programming
+typing           # For type hinting
+
+# Web-related libraries
+requests         # For making HTTP requests
+websockets       # For WebSocket communication
+click            # For creating command-line interfaces
+
+# Database-related libraries
+pymongo          # For MongoDB interaction
+psycopg2         # For PostgreSQL interaction
+
+# Security-related libraries
+hashlib          # For hashing algorithms
+pycrypto         # For cryptographic functions
+web3             # For interacting with Ethereum blockchain
+
+# Testing libraries
+pytest           # For testing Python code
+unittest         # For unit testing

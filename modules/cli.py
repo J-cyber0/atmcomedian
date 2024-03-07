@@ -1,7 +1,10 @@
 import os
 import dotenv
 import asyncio
+import signal
 import click
+import aioconsole
+#import asyncclick as click
 from modules.security import SecurityModule
 from modules.database import Database
 from modules.payment import Payment
@@ -22,7 +25,7 @@ def cli():
 
 async def user_login():
     # Prompt for user credentials asynchronously
-    print("Please enter your user credentials or enter 'new user' to create a new account:")
+    #await asyncio.to_thread(input, "Press enter if you have an account or type 'new user' to create a new account:")
     
     # Asynchronous input for username
     username = await asyncio.to_thread(input, "Username: ")
@@ -30,7 +33,7 @@ async def user_login():
     # Asynchronous input for password (hide_input=True is not supported asynchronously)
     password = await asyncio.to_thread(input, "Password: ")
     
-    if not security_module.secure_login(username, password):
+    if not await security_module.secure_login(username, password):
         print("Invalid username or password.")
         return None, None
     else:
@@ -41,7 +44,6 @@ async def user_login():
         
         return username, password
 
-    
 async def is_user_logged_in():
     # Check if the user is logged in
     print("Checking if user is logged in...")
@@ -50,27 +52,43 @@ async def is_user_logged_in():
     else:
         return False
 
-    
-
-# Define the "user setup" command
-@click.command()
-@click.option('--phrase', prompt='Enter command:', help='Enter a command.')
-def process_command(phrase):
+async def async_process_commands(phrase):
     if phrase.lower() == 'new user':
-        user_setup()
+        await user_setup()
     elif phrase.lower() == 'new wallet':
-        wallet_setup()
+        new_collection_name = input("Enter the NFT collection name: ")
+        await wallet_setup(collection_name=new_collection_name)
     elif phrase.lower() == 'new nft collection':
-        nft_collection_setup()
+        await nft_collection_setup()
     else:
         print("Command not recognized.")
 
-def user_setup():
+async def run_main():
+    setup_prompt = open('./setup.md', encoding='utf-8').read()
+    phrase = input(setup_prompt + '\n')  # Take input directly from the user
+
+    await async_process_commands(phrase)
+
+async def handle_sigint():
+    try:
+        while True:
+            await asyncio.sleep(1)  # Keep the coroutine running
+    except KeyboardInterrupt:
+        print("Received KeyboardInterrupt. Shutting down gracefully.")
+
+async def main():
+    # Setup signal handler for SIGINT (Ctrl+C)
+    signal.signal(signal.SIGINT, lambda s, f: asyncio.create_task(handle_sigint()))
+
+    # Run your main function
+    await run_main()
+    
+async def user_setup():
     # Prompt for user credentials
     print("Create a new user")
-    username = click.prompt("Username:")
-    password = click.prompt("Password:", hide_input=True)
-    confirm_password = click.prompt("Confirm Password:", hide_input=True)
+    username = click.prompt("Username")
+    password = click.prompt("Password", hide_input=True)
+    confirm_password = click.prompt("Confirm Password", hide_input=True)
 
     # Validate the password confirmation
     if password != confirm_password:
@@ -78,14 +96,14 @@ def user_setup():
         return None, None
     
     # Create the user account
-    if security_module.create_user(username, password):
+    if await security_module.create_user(username, password):
         print("User account created successfully.")
-        configure_database()
+        await configure_database()
     else:
         print("Failed to create user account. Please try again.")
     return None, None
 
-def configure_database():
+async def configure_database():
     # Prompt for user credentials
     print("Please enter the database connection details:")
     db_host = input("Database host: ")
@@ -110,81 +128,106 @@ def configure_database():
 
     print("Database configuration saved to .env file")
 
-    # Connect to the database
-    db.connect_to_postgresql()
+    # Connect to the database asynchronously
+    await db.connect_to_postgresql()
     print("Successfully connected to PostgreSQL database.")
     print("Creating tables...")
-    db.create_postgresql_tables()
+    await db.create_postgresql_tables()
 
     # Load the environment variables from the .env file
     dotenv.load_dotenv()
 
-    nft_collection_setup()
+    # Call nft_collection_setup asynchronously
+    await nft_collection_setup(collection_name="your_collection_name")  # Pass the collection name
+
     return None, None
 
-def nft_collection_setup(collection_name):
+async def nft_collection_setup(collection_name):
     # Prompt for user credentials
     print("Create a new NFT collection")
-    collection_name = input("Enter the name of your NFT collection: ")
-    collection_description = input("Enter a description for your NFT collection: ")
+    collection_name = await asyncio.to_thread(input, "Enter the name of your NFT collection: ")
+    collection_description = await asyncio.to_thread(input, "Enter a description for your NFT collection: ")
     print("Successfully connected to PostgreSQL database.")
     print("Storing NFT collection info...")
-    db.store_nft_collection_info(collection_name, collection_description)
+    await db.store_nft_collection_info(collection_name, collection_description)
     return None, None
 
-def get_nft_collection_info(collection_name):
-    current_collection = db.query_nft_collection_info(collection_name)
+async def get_nft_collection_info(collection_name):
+    current_collection = await db.query_nft_collection_info(collection_name)
     if current_collection == None:
         print("NFT collection not found.")
         return None, None
-    wallet_setup(collection_name)
+    await wallet_setup(collection_name)
     return current_collection
 
-def wallet_setup(self, collection_name): 
+async def wallet_setup(collection_name):
     # Prompt for user credentials
     print("Create a new wallet")
-    private_key = input("Enter your private key: ")
-    wallet_address = input("Enter the address to send funds to: ")
-    infura_url = input("Enter your Infura URL: ")
+    private_key = await asyncio.to_thread(input, "Enter your private key: ")
+    wallet_address = await asyncio.to_thread(input, "Enter the address to send funds to: ")
 
     # Create a new wallet with the provided information
     wallet = {
         "wallet_name": "eth",
         "private_key": private_key,
         "wallet_address": wallet_address,
-        "nft_collection_name": collection_name,
-        "infura_url": infura_url
+        "nft_collection_name": collection_name
     }
     
     print("Storing wallet info...")
-    db.insert_wallet_data(wallet)
+    await db.insert_wallet_data(wallet)
     print("Done.")    
-    resp = input("Would you like to create another wallet? (y/n): ")
-    if resp == 'y':
-        wallet_setup()
-    else:
-        print("Done configuring wallets.")
-        #log_transactions()
-        get_wallets(self, current_collection=collection_name)
-        return None, None
     
-async def get_wallets(self, current_collection):
+    resp = await asyncio.to_thread(input, "Would you like to create another wallet? (y/n): ")
+    if resp == 'y':
+        await wallet_setup(collection_name)
+    elif resp == 'n':
+        try:
+            print("Done configuring wallets.")
+            # log_transactions() # Assuming this function is defined elsewhere
+            await get_wallets(current_collection=collection_name)
+            # Check if Database connection is initialized
+            if db.postgres_connection is None:
+                print("Database connection not initialized. Configure the database connection.")
+                await configure_database()
+            else:
+                # If Database connection is initialized, proceed with retrieving wallets
+                await get_wallets(current_collection=collection_name)        
+        except Exception as e:
+            print(e)      
+    
+async def get_wallets(current_collection):
     # Get current wallets asynchronously
     wallets = await db.query_wallet_info(current_collection)
 
     print("Getting recent wallets")
 
-    # Get the list of recent wallet addresses
-    recent_wallets = await royalty_wallet_list(self, wallets, current_collection)
-    return recent_wallets
+    # Check if the wallets list is empty
+    if not wallets:
+        print("No wallets found. Creating a new wallet...")
+        # If no wallets are found, call the wallet setup function
+        await wallet_setup(current_collection)
+    else:
+        # If wallets are found, proceed with retrieving recent wallets
+        # display wallets
+        print("Wallets found:")
+        for wallet in wallets:
+            print(f"Wallet name: {wallet['wallet_name']}")
+            print(f"Wallet address: {wallet['wallet_address']}")
+            print(f"NFT collection name: {wallet['nft_collection_name']}")
+            print(f"Created at: {wallet['created_at']}")
+            print(f"Updated at: {wallet['updated_at']}")
+            print("")
+        print("---")
 
-async def royalty_wallet_list(self, wallets, current_collection):
+
+async def royalty_wallet_list(wallets, current_collection):
     try:
         # Sort wallets by creation time in descending order
         sorted_wallets = sorted(wallets, key=lambda x: x.get('created_at', 0), reverse=False)
         
         # Extract the wallet addresses with 'wallet_name' equal to 'eth' and limit to maximum of 6
-        collection_wallets = [wallet['wallet_address'] for wallet in sorted_wallets if wallet.get('wallet_name') == 'eth']
+        collection_wallets = [wallet['wallet_address'] for wallet in sorted_wallets if wallet.get('wallet_name') == wallet['nft_collection_name']]
         
         # If the collection wallets list is empty, return None
         if len(collection_wallets) == 0:
@@ -196,31 +239,29 @@ async def royalty_wallet_list(self, wallets, current_collection):
             royalty_wallet_list = collection_wallets[:6]
             for wallet in royalty_wallet_list:
                 active_wallets.append(wallet) 
-            return await store_royalty_wallets(self, current_collection, active_wallets)
+            await store_royalty_wallets(current_collection, active_wallets)
+            return sorted_wallets[0]['nft_collection_name']
     except Exception as e:
         print("Error getting wallets due to the following error:")
         print(e)
         return None
 
     
-def store_royalty_wallets(self, current_collection, active_wallets):
+async def store_royalty_wallets(current_collection, active_wallets):
     # Store the royalty wallets in the database
     print("Updating wallets receiving royalties...")
     for wallet in active_wallets:
-        db.store_royalty_wallets(self, current_collection=current_collection, wallet=wallet)
+        await db.store_royalty_wallets(current_collection=current_collection, wallet=wallet)
         print("Royalty wallets stored successfully.")
         return None, None
 
-def log_transactions():
+async def log_transactions():
     try:
         print("Starting log...")
     except Exception as e:
         print(e)
         print("Error logging transactions. Please try again.")
         return None, None
-    
-if __name__ == '__main__':
-    process_command()
 
 def store_user_credentials(username, password):
     # Store the user credentials in the database
@@ -323,5 +364,6 @@ def status(ctx, sender_wallet):
 
     # Proceed with the status command logic
 
+# Entry point
 if __name__ == "__main__":
-    cli()
+    asyncio.run(main())

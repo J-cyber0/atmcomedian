@@ -26,84 +26,86 @@ class Database:
             )
             print("Successfully connected to PostgreSQL database.")
         except asyncpg.PostgresError as e:
-            logging.error(f"Error connecting to PostgreSQL database: {e}")
+            logging.error(f"\nError connecting to PostgreSQL database: {e}")
 
     async def create_postgresql_tables(self):
         try:
-            # Create users table
-            await self.postgres_connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(255) NOT NULL,
-                    password VARCHAR(255) NOT NULL                
+            if self.postgres_connection:
+                # Create users table
+                await self.postgres_connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        username VARCHAR(255) NOT NULL,
+                        password VARCHAR(255) NOT NULL                
+                    )
+                    """
                 )
-                """
-            )
 
-            # Create transactions table
-            await self.postgres_connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS transactions (
+                # Create transactions table
+                await self.postgres_connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        id SERIAL PRIMARY KEY,
+                        sender_address VARCHAR(255) NOT NULL,
+                        receiver_address VARCHAR(255) NOT NULL,
+                        amount NUMERIC NOT NULL,
+                        hash VARCHAR(255) NOT NULL,
+                        status VARCHAR(255) NOT NULL,
+                        ciphertext VARCHAR(255) NOT NULL,
+                        nonce VARCHAR(255) NOT NULL,
+                        tag VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    )
+                    """
+                )
+
+                # Create wallets table
+                await self.postgres_connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS wallets (
+                        id SERIAL PRIMARY KEY,
+                        wallet_name VARCHAR(255) NOT NULL,
+                        private_key VARCHAR(255) NOT NULL,
+                        wallet_address VARCHAR(255) NOT NULL,
+                        nft_collection VARCHAR(255) NOT NULL,
+                        balance NUMERIC NOT NULL,
+                        currency VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    )
+                    """
+                )
+
+                # Create NFTs table
+                await self.postgres_connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS nfts (
                     id SERIAL PRIMARY KEY,
-                    sender_address VARCHAR(255) NOT NULL,
-                    receiver_address VARCHAR(255) NOT NULL,
-                    amount NUMERIC NOT NULL,
-                    hash VARCHAR(255) NOT NULL,
-                    status VARCHAR(255) NOT NULL,
-                    ciphertext VARCHAR(255) NOT NULL,
-                    nonce VARCHAR(255) NOT NULL,
-                    tag VARCHAR(255) NOT NULL,
+                    collection_name VARCHAR(255) NOT NULL,
+                    collection_description VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW()
                 )
                 """
-            )
+                )
 
-            # Create wallets table
-            await self.postgres_connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS wallets (
+                # Create Royalty Wallets table
+                await self.postgres_connection.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS royalty_wallets (
                     id SERIAL PRIMARY KEY,
                     wallet_name VARCHAR(255) NOT NULL,
-                    private_key VARCHAR(255) NOT NULL,
                     wallet_address VARCHAR(255) NOT NULL,
                     nft_collection VARCHAR(255) NOT NULL,
-                    infura_url VARCHAR(255) NOT NULL,
-                    balance NUMERIC NOT NULL,
-                    currency VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT NOW()
                 )
                 """
-            )
+                )
 
-            # Create NFTs table
-            await self.postgres_connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS nfts (
-                id SERIAL PRIMARY KEY,
-                collection_name VARCHAR(255) NOT NULL,
-                collection_description VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
-            )
-            """
-            )
-
-            # Create Royalty Wallets table
-            await self.postgres_connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS royalty_wallets (
-                id SERIAL PRIMARY KEY,
-                wallet_name VARCHAR(255) NOT NULL,
-                wallet_address VARCHAR(255) NOT NULL,
-                nft_collection VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT NOW()
-            )
-            """
-            )
-
-            print("PostgreSQL tables created successfully.")
+                print("PostgreSQL tables created successfully.")
+            else:
+                print("PostgreSQL connection is not established.")
         except asyncpg.PostgresError as e:
-            logging.error(f"Error creating PostgreSQL tables: {e}")
+            logging.error(f"\nError creating PostgreSQL tables: {e}")
 
     async def store_user_credentials(self, username, password):
         try:
@@ -118,7 +120,7 @@ class Database:
             print("User credentials inserted successfully.")
             return True
         except Exception as e:
-            logging.error(f"Error inserting data: {e}")
+            logging.error(f"\nError inserting data: {e}")
             return False
 
     async def store_nft_collection_info(self, collection_name, collection_description):
@@ -134,7 +136,7 @@ class Database:
             print("NFT collection info stored successfully.")
             return True
         except Exception as e:
-            logging.error(f"Error inserting data: {e}")
+            logging.error(f"\nError inserting data: {e}")
             return False
         
     async def store_royalty_wallets(self, current_collection, wallet):
@@ -149,7 +151,7 @@ class Database:
             )
             return True
         except Exception as e:
-            logging.error(f"Error inserting data: {e}")
+            logging.error(f"\nError inserting data: {e}")
             return False
 
     async def query_nft_collection_info(self, nft_collection_name):
@@ -162,7 +164,7 @@ class Database:
                 nft_collection_name
             )
         except Exception as e:
-            logging.error(f"Error querying data: {e}")
+            logging.error(f"\nError querying data: {e}")
             return False
         
     async def query_royalty_wallets(self):
@@ -174,23 +176,28 @@ class Database:
                 """
             )
         except Exception as e:
-            logging.error(f"Error querying data: {e}")
+            logging.error(f"\nError querying data: {e}")
             return False
 
     async def insert_wallet_data(self, wallet):
         try:
+            # Check if the database connection is properly initialized
+            if self.postgres_connection is None:
+                logging.error("Database connection is not initialized.")
+                return
+            
             # PostgreSQL
             if wallet:
                 await self.postgres_connection.execute(
                     """
-                    INSERT INTO wallets (wallet_name, private_key, wallet_address, infura_url)
-                    VALUES ($1, $2, $3, $4)
+                    INSERT INTO wallets (wallet_name, private_key, wallet_address)
+                    VALUES ($1, $2, $3)
                     """,
-                    wallet['wallet_name'], wallet['private_key'], wallet['wallet_address'], wallet['infura_url']
+                    wallet['wallet_name'], wallet['private_key'], wallet['wallet_address']
                 )
             print("Wallet inserted successfully.")
         except Exception as e:
-            logging.error(f"Error inserting data: {e}")
+            logging.error(f"\nError inserting data: {e}")
 
     async def query_wallet_info(self, nft_collection_name):
         try:
@@ -202,7 +209,7 @@ class Database:
                 nft_collection_name
             )
         except Exception as e:
-            logging.error(f"Error querying data: {e}")
+            logging.error(f"\nError querying data: {e}")
 
     async def insert_transaction(self, transaction):
         try:
@@ -217,7 +224,7 @@ class Database:
                 )
             print("Transaction inserted successfully.")
         except Exception as e:
-            logging.error(f"Error inserting data: {e}")
+            logging.error(f"\nError inserting data: {e}")
 
     async def get_transactions(self, wallet_address):
         try:
@@ -229,7 +236,7 @@ class Database:
                 wallet_address
             )
         except Exception as e:
-            logging.error(f"Error querying data: {e}")
+            logging.error(f"\nError querying data: {e}")
             return None
 
     async def close_connections(self):
@@ -239,7 +246,7 @@ class Database:
                 await self.postgres_connection.close()
 
         except Exception as e:
-            logging.error(f"Error closing connection: {e}")
+            logging.error(f"\nError closing connection: {e}")
    
 async def main():
     database = Database()
@@ -248,4 +255,7 @@ async def main():
     await database.close_connections()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Program interrupted, closing gracefully...")

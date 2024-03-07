@@ -1,12 +1,14 @@
 import os
-import psycopg2
+import logging
+import asyncpg
 import dotenv
+import asyncio
 
 class Database:
     def __init__(self):
         self.postgres_connection = None
 
-    def connect_to_postgresql(self):
+    async def connect_to_postgresql(self):
         try:
             # Load environment variables from .env file
             dotenv.load_dotenv()
@@ -19,19 +21,17 @@ class Database:
             password = os.environ.get("POSTGRES_PASSWORD")
 
             # Connect to PostgreSQL
-            self.postgres_connection = psycopg2.connect(
+            self.postgres_connection = await asyncpg.connect(
                 host=host, port=port, database=database, user=user, password=password
             )
             print("Successfully connected to PostgreSQL database.")
-        except psycopg2.Error as e:
-            print(f"Error connecting to PostgreSQL database: {e}")
+        except asyncpg.PostgresError as e:
+            logging.error(f"Error connecting to PostgreSQL database: {e}")
 
-    def create_postgresql_tables(self):
+    async def create_postgresql_tables(self):
         try:
-            cursor = self.postgres_connection.cursor()
-
             # Create users table
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -42,7 +42,7 @@ class Database:
             )
 
             # Create transactions table
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS transactions (
                     id SERIAL PRIMARY KEY,
@@ -60,7 +60,7 @@ class Database:
             )
 
             # Create wallets table
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS wallets (
                     id SERIAL PRIMARY KEY,
@@ -77,19 +77,19 @@ class Database:
             )
 
             # Create NFTs table
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS nfts (
                 id SERIAL PRIMARY KEY,
                 collection_name VARCHAR(255) NOT NULL,
-                collection_description VARCHAR(255) NOT NULL
+                collection_description VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT NOW()
             )
             """
             )
 
             # Create Royalty Wallets table
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS royalty_wallets (
                 id SERIAL PRIMARY KEY,
@@ -101,195 +101,151 @@ class Database:
             """
             )
 
-            self.postgres_connection.commit()
-            cursor.close()
             print("PostgreSQL tables created successfully.")
-        except psycopg2.Error as e:
-            print(f"Error creating PostgreSQL tables: {e}")
+        except asyncpg.PostgresError as e:
+            logging.error(f"Error creating PostgreSQL tables: {e}")
 
-    def store_user_credentials(self, username, password):
+    async def store_user_credentials(self, username, password):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 INSERT INTO users (username, password)
-                VALUES (%s, %s)
+                VALUES ($1, $2)
                 """,
-                (username, password)
+                username, password
             )
-            self.postgres_connection.commit()
-            cursor.close()
             print("User credentials inserted successfully.")
             return True
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            logging.error(f"Error inserting data: {e}")
             return False
 
-    def store_nft_collection_info(self, collection_name, collection_description):
+    async def store_nft_collection_info(self, collection_name, collection_description):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 INSERT INTO nfts (collection_name, collection_description)
-                VALUES (%s, %s)
+                VALUES ($1, $2)
                 """,
-                (collection_name, collection_description)
+                collection_name, collection_description
             )
-            self.postgres_connection.commit()
-            cursor.close()
             print("NFT collection info stored successfully.")
             return True
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            logging.error(f"Error inserting data: {e}")
             return False
         
-    def store_royalty_wallets(self, current_collection, wallet):
+    async def store_royalty_wallets(self, current_collection, wallet):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            await self.postgres_connection.execute(
                 """
                 INSERT INTO royalty_wallets (wallet_name, nft_collection, wallet_address)
-                VALUES (%s, %s, %s)
+                VALUES ('eth', $1, $2)
                 """,
-                ('eth', current_collection, wallet)
+                current_collection, wallet
             )
-            self.postgres_connection.commit()
-            cursor.close()
             return True
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            logging.error(f"Error inserting data: {e}")
             return False
 
-
-    def query_nft_collection_info(self, nft_collection_name):
+    async def query_nft_collection_info(self, nft_collection_name):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            return await self.postgres_connection.fetch(
                 """
-                SELECT * FROM nfts WHERE collection_name = %s
+                SELECT * FROM nfts WHERE collection_name = $1
                 """,
-                (nft_collection_name)
+                nft_collection_name
             )
-            nfts = cursor.fetchall()
-            cursor.close()
-            return nfts
         except Exception as e:
-            print(f"Error querying data: {e}")
+            logging.error(f"Error querying data: {e}")
             return False
         
-    def query_royalty_wallets(self):
+    async def query_royalty_wallets(self):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            return await self.postgres_connection.fetch(
                 """
                 SELECT * FROM royalty_wallets
                 """
             )
-            wallets = cursor.fetchall()
-            cursor.close()
-            return wallets
         except Exception as e:
-            print(f"Error querying data: {e}")
+            logging.error(f"Error querying data: {e}")
             return False
 
-    def insert_wallet_data(self, wallet):
+    async def insert_wallet_data(self, wallet):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-
             if wallet:
-                cursor.execute(
+                await self.postgres_connection.execute(
                     """
                     INSERT INTO wallets (wallet_name, private_key, wallet_address, infura_url)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4)
                     """,
-                    (wallet['wallet_name'], wallet['private_key'], wallet['wallet_address'], wallet['infura_url'])
+                    wallet['wallet_name'], wallet['private_key'], wallet['wallet_address'], wallet['infura_url']
                 )
-
-            self.postgres_connection.commit()
-            cursor.close()
-
             print("Wallet inserted successfully.")
         except Exception as e:
-            print(f"Error inserting data: {e}")
-
+            logging.error(f"Error inserting data: {e}")
 
     async def query_wallet_info(self, nft_collection_name):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-
-            cursor.execute(
+            return await self.postgres_connection.fetch(
                 """
-                SELECT * FROM wallets WHERE nft_collection = %s
+                SELECT * FROM wallets WHERE nft_collection = $1
                 """,
-                (nft_collection_name,)
+                nft_collection_name
             )
-
-            wallets = cursor.fetchall()
-            cursor.close()
-            return wallets
         except Exception as e:
-            print(f"Error querying data: {e}")
+            logging.error(f"Error querying data: {e}")
 
-
-
-    def insert_transaction(self, transaction):
+    async def insert_transaction(self, transaction):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-
             if transaction:
-                cursor.execute(
+                await self.postgres_connection.execute(
                     """
                     INSERT INTO transactions (sender_address, receiver_address, amount, ciphertext, nonce, tag)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                     """,
-                    (transaction['sender_address'], transaction['receiver_address'], transaction['amount'], transaction['ciphertext'], transaction['nonce'], transaction['tag'])
+                    transaction['sender_address'], transaction['receiver_address'], transaction['amount'], transaction['ciphertext'], transaction['nonce'], transaction['tag']
                 )
-            self.postgres_connection.commit()
-            cursor.close()
             print("Transaction inserted successfully.")
         except Exception as e:
-            print(f"Error inserting data: {e}")
+            logging.error(f"Error inserting data: {e}")
 
-    def get_transactions(self, wallet_address):
+    async def get_transactions(self, wallet_address):
         try:
             # PostgreSQL
-            cursor = self.postgres_connection.cursor()
-            cursor.execute(
+            return await self.postgres_connection.fetch(
                 """
-                SELECT * FROM transactions receiver_address = %s
+                SELECT * FROM transactions WHERE receiver_address = $1
                 """,
-                (wallet_address)
+                wallet_address
             )
-            transactions = cursor.fetchall()
-            print(f"PostgreSQL transactions: {transactions}")
-            cursor.close()
-            return transactions
         except Exception as e:
-            print(f"Error querying data: {e}")
+            logging.error(f"Error querying data: {e}")
             return None
-   
 
-    def close_connections(self):
+    async def close_connections(self):
         try:
             # Close the PostgreSQL connection
             if self.postgres_connection:
-                self.postgres_connection.close()
+                await self.postgres_connection.close()
 
         except Exception as e:
-            print(f"Error closing connection: {e}")
+            logging.error(f"Error closing connection: {e}")
    
+async def main():
+    database = Database()
+    await database.connect_to_postgresql()
+    await database.create_postgresql_tables()
+    await database.close_connections()
+
 if __name__ == "__main__":
-    try:
-        database = Database()
-        database.connect_to_postgresql()
-        database.create_postgresql_tables()
-    finally:
-        database.close_connections()
+    asyncio.run(main())

@@ -1,4 +1,5 @@
 import hashlib
+import asyncio
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
@@ -6,29 +7,30 @@ class Authentication:
     def __init__(self):
         self.users = {}
 
-    def register_user(self, username, password):
+    async def register_user(self, username, password):
         # Only allow the first user to be created
         if len(self.users) > 0:
             return False
 
         # Store username and hashed password
-        hashed_password = self._hash_password(password)
+        hashed_password = await self._hash_password(password)
         self.users[username] = hashed_password
         return True
 
-    def _hash_password(self, password):
-        return hashlib.sha256(password.encode()).hexdigest()
+    async def _hash_password(self, password):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, lambda: hashlib.sha256(password.encode()).hexdigest())
 
-    def authenticate_user(self, username, password):
+    async def authenticate_user(self, username, password):
         # Check if username exists and compare hashed passwords
         if username in self.users:
-            hashed_password = self._hash_password(password)
+            hashed_password = await self._hash_password(password)
             if self.users[username] == hashed_password:
                 return True
         return False
 
-    def create_user(self, username, password):
-        return self.register_user(username, password)
+    async def create_user(self, username, password):
+        return await self.register_user(username, password)
 
 class Encryption:
     def __init__(self, key):
@@ -54,8 +56,8 @@ class SecurityModule:
         self.user_db = user_db
         self.encryption = Encryption(get_random_bytes(16))
 
-    def secure_login(self, username, password):
-        if self.authentication.authenticate_user(username, password):
+    async def secure_login(self, username, password):
+        if await self.authentication.authenticate_user(username, password):
             return True
         else:
             return False
@@ -66,10 +68,10 @@ class SecurityModule:
     def decrypt_sensitive_data(self, ciphertext, nonce, tag):
         return self.encryption.decrypt_data(ciphertext, nonce, tag)
 
-    def create_user(self, username, password):
-        return self.authentication.create_user(username, password)
+    async def create_user(self, username, password):
+        return await self.authentication.create_user(username, password)
 
-if __name__ == "__main__":
+async def main():
     # Example usage
     user_db = {}  # Initialize user database
     security_module = SecurityModule(user_db)
@@ -77,7 +79,10 @@ if __name__ == "__main__":
     # Create a new user
     username = input("Enter username: ")
     password = input("Enter password: ")
-    if security_module.create_user(username, password):
+    if await security_module.create_user(username, password):
         print("User created successfully!")
     else:
         print("Username already exists or user creation is disabled.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

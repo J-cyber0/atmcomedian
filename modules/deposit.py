@@ -2,6 +2,7 @@ import os
 import asyncio
 from web3 import Web3
 import json
+import threading
 from modules.database import Database
 from modules.payment import Payment
 
@@ -12,6 +13,7 @@ class Deposit:
         self.contract_address = os.getenv('CONTRACT_ADDRESS')
         self.contract = self.web3.eth.contract(address=self.contract_address, abi=self.contract_abi)
         self.db = Database()
+        self.pause_event = threading.Event()
 
     def load_contract_abi(self):
         with open(os.path.join(os.getcwd(), 'contracts', 'Coin.abi'), 'r') as contract_file:
@@ -23,8 +25,12 @@ class Deposit:
                 print("Getting access to wallets...")
                 new_block_filter = self.web3.eth.filter('latest')
                 async for block in new_block_filter.get_new_entries():
+                    if self.pause_event.is_set():
+                        print("Pausing to distribute payments...")
+                        self.pause_event.clear()
+                        await self.pause_event.wait()  # Wait until the event is set again
                     print('\nNew deposit detected:')
-                    deposit_event = await self.trigger_payments(block)
+                    deposit_event = await self.trigger_payments(block, receiver_wallet_address)
                     if deposit_event['args']['receiver'] == receiver_wallet_address:
                         return deposit_event['args']['receiver']
                     
@@ -37,40 +43,51 @@ class Deposit:
             except Exception as e:
                 print(f'Error occurred: {str(e)}')
 
-    async def trigger_payments(self, block):
-        # Update royalty wallets in database
-        print("triggering payments...")
-        royalty_wallets = await self.get_royalty_wallets()
-        if royalty_wallets:
+    async def trigger_payments(self):
+        try:
+            print("triggering payments...")
+            royalty_wallets = await self.get_royalty_wallets()
+            if not royalty_wallets:
+                print("Error processing payments: No royalty wallets found.")
+                return
+
             print("Successfully retrieved royalty wallets.")
             payment_instance = Payment()
-            if len(royalty_wallets) >= 3:
-                for wallet_info in royalty_wallets:
-                    wallet_address = wallet_info['wallet_address']
-                    wallet_id = wallet_info['id']
-                    print("Processing payments to wallet id:", wallet_id)
-                    await payment_instance.initiate_transaction(recipient_address=wallet_address, amount=input("Enter amount for deposit: "), private_key=os.getenv('PRIVATE_KEY'))
-                    print("Successfully processed and stored payments to wallet id:", wallet_id)
-            else:
-                print("Not enough royalty wallets to distribute payments.")
-        else:
-            print("Error processing payments.")
+            for wallet_info in royalty_wallets:
+                wallet_address = wallet_info['wallet_address']
+                wallet_id = wallet_info['id']
+                print("Processing payments to wallet id:", wallet_id)
+                amount = await self.get_valid_amount()
+                await payment_instance.initiate_transaction(recipient_address=wallet_address, amount=amount, private_key=os.getenv('PRIVATE_KEY'))
+                print("Successfully processed and stored payments to wallet id:", wallet_id)
+        except Exception as e:
+            print(f"Error processing payments: {str(e)}")
 
     async def get_royalty_wallets(self):
         try:
-            royalty_wallets = self.db.query_royalty_wallets()
-            return royalty_wallets
+            return await self.db.query_royalty_wallets()
         except Exception as e:
-            print("Error finding royalty wallets:", e)
+            print(f"Error finding royalty wallets: {str(e)}")
             return None
 
     async def update_royalty_wallets(self, new_wallet):
         try:
-            self.db.store_royalty_wallets(wallet=new_wallet)
+            await self.db.store_royalty_wallets(wallet=new_wallet)
             print("Successfully updated royalty wallets.")
         except Exception as e:
-            print("Error updating royalty wallets:", e)
+            print(f"Error updating royalty wallets: {str(e)}")
 
+    async def get_valid_amount(self):
+        while True:
+            amount = input("Enter amount for deposit: ")
+            try:
+                amount = float(amount)
+                if amount <= 0:
+                    print("Amount must be a positive number.")
+                else:
+                    return amount
+            except ValueError:
+                print("Invalid amount. Please enter a valid number.")
 
 async def main(royalty_wallets):
     deposit_listener = Deposit()

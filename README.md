@@ -2,7 +2,7 @@
 
 #### Prerequisites
 
-* Python 3.9 or higher
+* Python 3.9 or any version below Python 3.11
 * Pip
 * Git
 * PostgreSQL
@@ -54,14 +54,9 @@ git clone https://github.com/J-cyber0/atmcomedian.git
 
 A virtual environment helps isolate the application's dependencies from the system's global Python environment.
 
-**Windows:**
+**Windows/macOS/Linux:**
 ```
-python -m venv venv
-```
-
-**macOS/Linux:**
-```
-python3 -m venv venv
+python3.10 -m venv venv
 ```
 
 #### 3. Install Required Dependencies (if not using setup.py)

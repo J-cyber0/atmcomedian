@@ -22,7 +22,11 @@ Before proceeding, make sure to have PostgreSQL installed on your system. If not
   - This installer can run in graphical or silent install modes.
  
 - **Linux:**
-  - PostgreSQL is available in all Ubuntu versions by default. 
+  - To install PostgreSQL on Ubuntu, use the apt-get (or other apt-driving) command:
+```
+apt-get install postgresql-12
+```
+ 
   - To upgrade PostgreSQL on Ubuntu, use the apt command:
 ```
 sudo apt update
